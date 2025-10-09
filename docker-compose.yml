@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  wx-bot:
+    build: .
+    container_name: wx-bot
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    volumes:
+      # 挂载配置文件
+      - ./.env:/app/.env
+      # 持久化登录状态
+      - ./.wechaty:/app/.wechaty
+      # 持久化日志
+      - ./logs:/app/logs
+    ports:
+      # 二维码服务端口
+      - "3000:3000"
+    networks:
+      - wx-bot-network
+
+networks:
+  wx-bot-network:
+    driver: bridge
