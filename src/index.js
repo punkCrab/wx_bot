@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import { WechatyBuilder } from 'wechaty';
 import AveApiV2Service from './services/aveApiV2.js';
+import BinanceMonitor from './services/binanceMonitor.js';
+import BinanceMonitorMock from './services/binanceMonitorMock.js';
 import MessageHandler from './handlers/messageHandler.js';
 import { config, validateConfig } from './config/config.js';
 import { createLogger } from './utils/logger.js';
@@ -24,6 +26,11 @@ if (configErrors.length > 0) {
 // 初始化服务（使用Ave.ai API V2）
 const tokenApiService = new AveApiV2Service(config.api.apiKey);
 const messageHandler = new MessageHandler(tokenApiService);
+
+// 初始化币安公告监控服务（暂不传递bot实例，等登录后再设置）
+// 如果环境变量设置为使用模拟模式（默认使用真实API）
+const useMockMode = process.env.BINANCE_MOCK_MODE === 'true';
+const binanceMonitor = useMockMode ? new BinanceMonitorMock() : new BinanceMonitor();
 
 // 创建微信机器人实例
 const bot = WechatyBuilder.build({
@@ -66,6 +73,29 @@ bot.on('login', (user) => {
   console.log(`  - 地址缓存: ${config.cache.addressTimeout / 1000}秒`);
 
   console.log('\n🚀 机器人已启动，开始监控合约地址...\n');
+
+  // 设置bot实例和监控群聊
+  const binanceMonitorRooms = process.env.BINANCE_MONITOR_ROOMS ?
+    process.env.BINANCE_MONITOR_ROOMS.split(',').map(s => s.trim()).filter(s => s) :
+    config.bot.monitorRooms; // 使用与合约监控相同的群聊配置
+
+  binanceMonitor.bot = bot;
+  binanceMonitor.monitorRooms = binanceMonitorRooms;
+
+  // 启动币安公告监控
+  binanceMonitor.start().then(() => {
+    const mode = useMockMode ? '模拟模式' : '真实模式';
+    const sendMode = binanceMonitor.bot ? '发送到微信群' : '仅控制台输出';
+    console.log(`📢 币安公告监控已启动（${mode}：${sendMode}）`);
+
+    if (binanceMonitorRooms && binanceMonitorRooms.length > 0) {
+      console.log(`📢 币安公告监控群聊: ${binanceMonitorRooms.join(', ')}\n`);
+    } else {
+      console.log(`📢 币安公告监控模式: 所有群聊\n`);
+    }
+  }).catch(err => {
+    logger.error('币安公告监控启动失败:', { error: err.message });
+  });
 });
 
 /**
@@ -152,6 +182,10 @@ process.on('SIGINT', async () => {
   console.log('\n\n⏹️ 正在关闭机器人...');
 
   try {
+    // 停止币安监控
+    binanceMonitor.stop();
+    console.log('✅ 币安公告监控已停止');
+
     await bot.stop();
     logger.info('机器人已关闭');
     console.log('✅ 机器人已安全关闭');

@@ -1,9 +1,12 @@
 # 微信群BSC代币信息播报机器人
 
-这是一个自动监控微信群聊消息的机器人，当检测到群聊中出现 `0x` 开头的BSC合约地址时，会自动调用 **ave.ai API** 获取代币实时信息并播报到群里。
+这是一个功能强大的微信群监控机器人，提供以下核心功能：
+1. **BSC代币信息播报** - 自动检测并播报BSC合约地址的代币信息
+2. **币安上币公告监控** - 实时监控币安新币上线公告并通知到微信群
 
 ## 功能特性
 
+### BSC代币信息播报
 - ✅ 自动检测群消息中的BSC合约地址（0x开头，42位十六进制）
 - ✅ 通过 ave.ai API 获取代币实时数据
 - ✅ 丰富的信息展示：
@@ -15,6 +18,16 @@
   - 创建时间
 - ✅ 智能缓存（10秒内不重复播报）
 - ✅ API速率限制保护
+
+### 币安上币公告监控（新功能）
+- ✅ 实时监控币安新币上线公告
+- ✅ 每5秒自动检查最新公告（可配置）
+- ✅ 检测到新币上线立即推送到微信群
+- ✅ 防重复通知机制
+- ✅ 支持真实API和模拟模式
+- ✅ 可配置独立的监控群聊
+
+### 通用特性
 - ✅ 支持监控所有群或指定群聊
 - ✅ 完善的错误处理和日志系统
 
@@ -98,24 +111,28 @@ npm run dev
 ```
 wx_bot/
 ├── src/
-│   ├── index.js                 # 主程序入口
+│   ├── index.js                     # 主程序入口
 │   ├── config/
-│   │   └── config.js           # 配置管理
+│   │   └── config.js               # 配置管理
 │   ├── services/
-│   │   ├── aveApiV2.js        # Ave.ai API V2服务
-│   │   └── cache.js            # 缓存服务
+│   │   ├── aveApiV2.js            # Ave.ai API V2服务
+│   │   ├── binanceMonitor.js      # 币安公告监控服务
+│   │   ├── binanceMonitorMock.js  # 币安监控模拟版本
+│   │   └── cache.js                # 缓存服务
 │   ├── handlers/
-│   │   └── messageHandler.js   # 消息处理器
+│   │   └── messageHandler.js       # 消息处理器
 │   └── utils/
-│       ├── contractDetector.js # 合约地址检测
-│       ├── logger.js           # 日志工具
-│       ├── qrcode.js           # 二维码生成
-│       └── rateLimiter.js     # 速率限制
-├── .env                        # 环境变量配置
-├── .env.example                # 环境变量示例
-├── .gitignore                  # Git忽略文件
-├── package.json                # 项目配置
-└── README.md                   # 说明文档
+│       ├── contractDetector.js     # 合约地址检测
+│       ├── logger.js               # 日志工具
+│       └── rateLimiter.js         # 速率限制
+├── .env                            # 环境变量配置
+├── .env.example                    # 环境变量示例
+├── .gitignore                      # Git忽略文件
+├── package.json                    # 项目配置
+├── README.md                       # 说明文档
+├── BINANCE_MONITOR.md              # 币安监控详细说明
+├── QUICK_START.md                  # 快速开始指南
+└── DEPLOY_UBUNTU.md                # Ubuntu部署指南
 ```
 
 ## 配置说明
@@ -130,6 +147,9 @@ wx_bot/
 | `CACHE_ADDRESS_TIMEOUT` | 否 | 地址播报缓存时间(毫秒) | `10000` |
 | `CACHE_CONTRACT_TIMEOUT` | 否 | API数据缓存时间(毫秒) | `600000` |
 | `MIN_QUERY_INTERVAL` | 否 | 同地址最小查询间隔(毫秒) | `0` |
+| `BINANCE_MOCK_MODE` | 否 | 币安监控是否使用模拟模式 | `false` |
+| `BINANCE_CHECK_INTERVAL` | 否 | 币安公告检查间隔(毫秒) | `5000` |
+| `BINANCE_MONITOR_ROOMS` | 否 | 币安公告监控的群名称 | 使用`MONITOR_ROOMS` |
 
 ### 监控模式
 

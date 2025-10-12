@@ -4,3 +4,11 @@ node_modules/
 *.log
 .wechaty/
 .claude/
+
+# 测试文件
+src/test-*.js
+
+# 测试文档
+TEST_*.md
+VERIFICATION.md
+FLOW_DIAGRAM.md
