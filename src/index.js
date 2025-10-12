@@ -154,6 +154,20 @@ bot.on('error', (error) => {
     error: error.message,
     stack: error.stack
   });
+
+  // 处理wechat4u特定错误
+  if (error.message && error.message.includes('1102')) {
+    console.error('\n❌ 微信登录错误 (1102)');
+    console.error('可能的原因:');
+    console.error('  1. 账号被微信限制登录网页版/第三方客户端');
+    console.error('  2. 新注册的微信账号（需要使用一段时间）');
+    console.error('  3. 长时间未登录网页版微信');
+    console.error('\n解决方案:');
+    console.error('  1. 尝试使用其他微信账号');
+    console.error('  2. 使用老账号（注册超过6个月）');
+    console.error('  3. 先在电脑端登录微信网页版激活权限');
+    console.error('  4. 考虑使用其他puppet（如wechaty-puppet-padlocal）\n');
+  }
 });
 
 /**
