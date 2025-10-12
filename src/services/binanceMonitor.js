@@ -44,7 +44,10 @@ class BinanceMonitor {
           'Accept': 'application/json',
           'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8'
         },
-        timeout: 10000
+        timeout: 15000,
+        validateStatus: function (status) {
+          return status >= 200 && status < 500; // 接受200-499的状态码
+        }
       });
 
       if (response.data && response.data.success && response.data.data) {
@@ -57,14 +60,25 @@ class BinanceMonitor {
 
       return [];
     } catch (error) {
-      this.logger.error('获取币安公告失败:', {
+      // 增强错误处理，处理各种网络错误
+      const errorInfo = {
         error: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
         code: error.code,
         url: this.apiUrl
-      });
-      throw error;
+      };
+
+      if (error.response) {
+        errorInfo.status = error.response.status;
+        errorInfo.statusText = error.response.statusText;
+      }
+
+      if (error.code === 'ERR_BAD_RESPONSE') {
+        this.logger.warn('币安API返回无效响应，将在下次重试', errorInfo);
+        return []; // 返回空数组，不中断服务
+      }
+
+      this.logger.error('获取币安公告失败:', errorInfo);
+      return []; // 返回空数组，不抛出错误
     }
   }
 
