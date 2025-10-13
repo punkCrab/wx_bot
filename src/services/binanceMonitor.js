@@ -12,7 +12,7 @@ class BinanceMonitor {
     this.bot = bot; // 微信机器人实例
     this.monitorRooms = monitorRooms; // 要发送公告的群聊列表
     this.apiUrl = 'https://www.binance.com/bapi/apex/v1/public/apex/cms/article/list/query';
-    this.checkInterval = parseInt(process.env.BINANCE_CHECK_INTERVAL) || 5000; // 检查间隔
+    this.checkInterval = parseInt(process.env.BINANCE_CHECK_INTERVAL) || 3000; // 检查间隔（默认3秒）
     this.intervalId = null;
 
     // 缓存已知的文章ID，避免重复通知
@@ -162,7 +162,7 @@ class BinanceMonitor {
   }
 
   /**
-   * 发送消息到微信群
+   * 发送消息到微信群（并行发送，提高速度）
    * @param {string} message - 要发送的消息
    */
   async sendToWechatGroups(message) {
@@ -172,25 +172,56 @@ class BinanceMonitor {
     }
 
     try {
+      const startTime = Date.now();
+
       // 如果指定了监控群聊，只发送到这些群
       if (this.monitorRooms && this.monitorRooms.length > 0) {
-        for (const roomName of this.monitorRooms) {
-          const room = await this.bot.Room.find({ topic: roomName });
-          if (room) {
-            await room.say(message);
-            this.logger.info(`已发送币安公告到群聊: ${roomName}`);
-          } else {
-            this.logger.warn(`未找到群聊: ${roomName}`);
+        // 并行查找和发送
+        const sendPromises = this.monitorRooms.map(async (roomName) => {
+          try {
+            const room = await this.bot.Room.find({ topic: roomName });
+            if (room) {
+              await room.say(message);
+              this.logger.info(`✓ 已发送币安公告到群聊: ${roomName}`);
+              return { success: true, room: roomName };
+            } else {
+              this.logger.warn(`未找到群聊: ${roomName}`);
+              return { success: false, room: roomName, reason: 'not_found' };
+            }
+          } catch (error) {
+            this.logger.error(`发送到群聊 ${roomName} 失败:`, { error: error.message });
+            return { success: false, room: roomName, reason: error.message };
           }
-        }
+        });
+
+        const results = await Promise.all(sendPromises);
+        const successCount = results.filter(r => r.success).length;
+        const elapsed = Date.now() - startTime;
+
+        this.logger.info(`币安公告发送完成: ${successCount}/${this.monitorRooms.length} 个群，耗时 ${elapsed}ms`);
+
       } else {
-        // 否则发送到所有群聊
+        // 否则发送到所有群聊（并行）
         const rooms = await this.bot.Room.findAll();
-        for (const room of rooms) {
-          const topic = await room.topic();
-          await room.say(message);
-          this.logger.info(`已发送币安公告到群聊: ${topic}`);
-        }
+
+        const sendPromises = rooms.map(async (room) => {
+          try {
+            const topic = await room.topic();
+            await room.say(message);
+            this.logger.info(`✓ 已发送币安公告到群聊: ${topic}`);
+            return { success: true, room: topic };
+          } catch (error) {
+            const topic = await room.topic().catch(() => 'Unknown');
+            this.logger.error(`发送到群聊 ${topic} 失败:`, { error: error.message });
+            return { success: false, room: topic, reason: error.message };
+          }
+        });
+
+        const results = await Promise.all(sendPromises);
+        const successCount = results.filter(r => r.success).length;
+        const elapsed = Date.now() - startTime;
+
+        this.logger.info(`币安公告发送完成: ${successCount}/${rooms.length} 个群，耗时 ${elapsed}ms`);
       }
     } catch (error) {
       this.logger.error('发送消息到微信群失败:', {

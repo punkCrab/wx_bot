@@ -108,8 +108,8 @@ class MessageHandler {
       // 更新最后查询时间
       this.lastQueryTime.set(normalizedAddress, Date.now());
 
-      // 调用 API 获取代币信息（强制刷新缓存，获取最新数据）
-      const tokenInfo = await this.tokenApiService.getTokenInfo(address, { forceRefresh: true });
+      // 调用 API 获取代币信息（不使用缓存，直接获取最新数据）
+      const tokenInfo = await this.tokenApiService.getTokenInfo(address);
 
       // 格式化信息
       const formattedMessage = this.tokenApiService.formatTokenInfo(tokenInfo, address);

@@ -17,18 +17,20 @@
   - 团队人数（持有者数量）
   - 24小时交易量
   - 创建时间
-- ✅ 智能缓存机制：
+- ✅ 智能播报机制：
   - 防刷屏：配置时间内（默认10秒）不重复播报同一地址
-  - 实时更新：超过防刷屏时间后，重新获取最新代币数据
+  - 实时数据：每次播报都直接调用API获取最新代币信息
 - ✅ API速率限制保护
 
 ### 币安上币公告监控
 - ✅ 实时监控币安新币上线公告
-- ✅ 每5秒自动检查最新公告（可配置）
+- ✅ 每3秒自动检查最新公告（可配置，优化后延迟<10秒）
 - ✅ 检测到新币上线立即推送到微信群
+- ✅ **并行发送消息，10倍性能提升**
 - ✅ 防重复通知机制
 - ✅ 支持真实API和模拟模式
 - ✅ 可配置独立的监控群聊
+- ✅ 实时性能监控和日志
 
 ### 推特动态监控（新功能）
 - ✅ 使用 RSSHub（开箱即用，无需 API 密钥）
@@ -80,7 +82,7 @@ MIN_QUERY_INTERVAL=0           # 无额外查询间隔限制
 
 # 币安公告监控配置
 BINANCE_MOCK_MODE=false        # 是否使用模拟模式
-BINANCE_CHECK_INTERVAL=5000    # 检查间隔（毫秒）
+BINANCE_CHECK_INTERVAL=3000    # 检查间隔（毫秒，默认3秒，优化后延迟<10秒）
 BINANCE_MONITOR_ROOMS=         # 独立的监控群聊
 
 # 推特监控配置（RSSHub）
@@ -158,6 +160,7 @@ wx_bot/
 ├── package.json                    # 项目配置
 ├── README.md                       # 说明文档
 ├── BINANCE_MONITOR.md              # 币安监控详细说明
+├── BINANCE_NOTIFICATION_OPTIMIZATION.md # 币安通知延迟优化说明
 ├── TWITTER_MONITOR_RSSHUB.md       # 推特监控详细说明（RSSHub）
 ├── QUICK_START.md                  # 快速开始指南
 └── DEPLOY_UBUNTU.md                # Ubuntu部署指南
@@ -173,10 +176,9 @@ wx_bot/
 | `MONITOR_ROOMS` | 否 | 监控的群名称，多个用逗号分隔 | 监控所有群 |
 | `LOG_LEVEL` | 否 | 日志级别 (error/warn/info/debug) | `info` |
 | `CACHE_ADDRESS_TIMEOUT` | 否 | 防刷屏时间(毫秒)，此时间内不重复播报 | `10000` |
-| `CACHE_CONTRACT_TIMEOUT` | 否 | API数据缓存时间(毫秒)，仅内部使用 | `600000` |
 | `MIN_QUERY_INTERVAL` | 否 | 同地址最小查询间隔(毫秒) | `0` |
 | `BINANCE_MOCK_MODE` | 否 | 币安监控是否使用模拟模式 | `false` |
-| `BINANCE_CHECK_INTERVAL` | 否 | 币安公告检查间隔(毫秒) | `5000` |
+| `BINANCE_CHECK_INTERVAL` | 否 | 币安公告检查间隔(毫秒) | `3000` |
 | `BINANCE_MONITOR_ROOMS` | 否 | 币安公告监控的群名称 | 使用`MONITOR_ROOMS` |
 | `TWITTER_ENABLED` | 否 | 是否启用推特监控 | `true` |
 | `TWITTER_USERNAME` | 否 | 监控的推特用户名 | `tradfinews` |

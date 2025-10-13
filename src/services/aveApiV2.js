@@ -27,25 +27,11 @@ class AveApiV2Service {
   /**
    * 获取BSC代币信息
    * @param {string} tokenAddress - 代币地址
-   * @param {Object} options - 选项
-   * @param {boolean} options.forceRefresh - 是否强制刷新缓存
    * @returns {Promise<Object>} 代币信息
    */
-  async getTokenInfo(tokenAddress, options = {}) {
-    const { forceRefresh = false } = options;
-
-    // 检查缓存（除非强制刷新）
-    const cacheKey = `token:${tokenAddress.toLowerCase()}`;
-
-    if (!forceRefresh) {
-      const cachedData = this.cache.get(cacheKey);
-      if (cachedData) {
-        this.logger.debug(`从缓存获取代币信息: ${tokenAddress}`);
-        return cachedData;
-      }
-    } else {
-      this.logger.debug(`强制刷新缓存: ${tokenAddress}`);
-    }
+  async getTokenInfo(tokenAddress) {
+    // 不使用缓存，每次都直接调用API获取最新数据
+    this.logger.debug(`获取最新代币信息（不使用缓存）: ${tokenAddress}`);
 
     // 检查速率限制
     if (!this.rateLimiter.canMakeRequest()) {
@@ -80,10 +66,8 @@ class AveApiV2Service {
         // 检查响应数据
         if (response.data && response.data.data) {
           const tokenInfo = this.processTokenData(response.data.data);
-          // 缓存结果（注意：这里的缓存仅用于API层面的短期缓存，避免重复请求）
-          // 实际播报逻辑由 messageHandler 的 addressCache 控制
-          this.cache.set(cacheKey, tokenInfo);
-          this.logger.info(`成功获取代币信息: ${tokenAddress}`);
+          // 不缓存，直接返回最新数据
+          this.logger.info(`成功获取最新代币信息: ${tokenAddress}`);
           return tokenInfo;
         } else if (response.data && response.data.error) {
           throw new Error(response.data.error.message || 'API返回错误');
