@@ -167,6 +167,17 @@ bot.on('error', (error) => {
     console.error('  2. 使用老账号（注册超过6个月）');
     console.error('  3. 先在电脑端登录微信网页版激活权限');
     console.error('  4. 考虑使用其他puppet（如wechaty-puppet-padlocal）\n');
+  } else if (error.message && error.message.includes('1205')) {
+    console.error('\n⚠️ 微信获取联系人错误 (1205)');
+    console.error('这是一个已知的wechat4u错误，通常不影响核心功能');
+    console.error('\n可能的原因:');
+    console.error('  1. 联系人列表获取失败（网络波动）');
+    console.error('  2. 微信接口返回异常');
+    console.error('  3. 会话状态不稳定');
+    console.error('\n解决方案:');
+    console.error('  1. 忽略此错误，继续使用（不影响消息收发）');
+    console.error('  2. 重启程序重新登录');
+    console.error('  3. 如频繁出现，考虑升级到更稳定的puppet\n');
   }
 });
 
