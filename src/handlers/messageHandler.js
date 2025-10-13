@@ -79,7 +79,7 @@ class MessageHandler {
     const cacheKey = `broadcast:${normalizedAddress}`;
 
     try {
-      // 检查是否最近已播报过（10秒内不重复）
+      // 检查是否最近已播报过（防刷屏机制）
       if (this.addressCache.has(cacheKey)) {
         const ttl = this.addressCache.getTTL(cacheKey);
         this.logger.debug(`地址已在缓存中，跳过`, {
@@ -108,8 +108,8 @@ class MessageHandler {
       // 更新最后查询时间
       this.lastQueryTime.set(normalizedAddress, Date.now());
 
-      // 调用DexScreener API获取代币信息
-      const tokenInfo = await this.tokenApiService.getTokenInfo(address);
+      // 调用 API 获取代币信息（强制刷新缓存，获取最新数据）
+      const tokenInfo = await this.tokenApiService.getTokenInfo(address, { forceRefresh: true });
 
       // 格式化信息
       const formattedMessage = this.tokenApiService.formatTokenInfo(tokenInfo, address);
@@ -117,7 +117,7 @@ class MessageHandler {
       // 发送到群聊
       await room.say(formattedMessage);
 
-      // 记录已播报的地址（10秒内不重复）
+      // 记录已播报的地址（防刷屏时间内不重复）
       this.addressCache.set(cacheKey, true);
 
       this.logger.info(`✓ 合约信息已播报`, {

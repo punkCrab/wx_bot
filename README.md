@@ -3,6 +3,7 @@
 这是一个功能强大的微信群监控机器人，提供以下核心功能：
 1. **BSC代币信息播报** - 自动检测并播报BSC合约地址的代币信息
 2. **币安上币公告监控** - 实时监控币安新币上线公告并通知到微信群
+3. **推特动态监控** - 实时监控指定推特账号的最新推文并推送到微信群
 
 ## 功能特性
 
@@ -16,16 +17,29 @@
   - 团队人数（持有者数量）
   - 24小时交易量
   - 创建时间
-- ✅ 智能缓存（10秒内不重复播报）
+- ✅ 智能缓存机制：
+  - 防刷屏：配置时间内（默认10秒）不重复播报同一地址
+  - 实时更新：超过防刷屏时间后，重新获取最新代币数据
 - ✅ API速率限制保护
 
-### 币安上币公告监控（新功能）
+### 币安上币公告监控
 - ✅ 实时监控币安新币上线公告
 - ✅ 每5秒自动检查最新公告（可配置）
 - ✅ 检测到新币上线立即推送到微信群
 - ✅ 防重复通知机制
 - ✅ 支持真实API和模拟模式
 - ✅ 可配置独立的监控群聊
+
+### 推特动态监控（新功能）
+- ✅ 使用 RSSHub（开箱即用，无需 API 密钥）
+- ✅ 实时监控指定推特账号的最新推文
+- ✅ 每1分钟自动检查新推文（可配置）
+- ✅ 自动排除转推（只监控原创推文）
+- ✅ 防重复通知机制
+- ✅ 支持自定义监控账号
+- ✅ 可配置独立的监控群聊
+- ✅ 多个 RSSHub 实例自动切换
+- ✅ 完全免费，无速率限制
 
 ### 通用特性
 - ✅ 支持监控所有群或指定群聊
@@ -63,6 +77,18 @@ LOG_LEVEL=info
 CACHE_ADDRESS_TIMEOUT=10000    # 地址播报缓存10秒（防刷屏）
 CACHE_CONTRACT_TIMEOUT=600000  # API数据缓存10分钟
 MIN_QUERY_INTERVAL=0           # 无额外查询间隔限制
+
+# 币安公告监控配置
+BINANCE_MOCK_MODE=false        # 是否使用模拟模式
+BINANCE_CHECK_INTERVAL=5000    # 检查间隔（毫秒）
+BINANCE_MONITOR_ROOMS=         # 独立的监控群聊
+
+# 推特监控配置（RSSHub）
+TWITTER_ENABLED=true                       # 是否启用推特监控
+TWITTER_USERNAME=tradfinews                # 监控的推特用户名
+TWITTER_CHECK_INTERVAL=60000               # 检查间隔（毫秒）
+TWITTER_MONITOR_ROOMS=                     # 独立的监控群聊
+RSSHUB_INSTANCES=                          # 自定义RSSHub实例（留空使用默认公共实例）
 ```
 
 ## 使用方法
@@ -118,6 +144,7 @@ wx_bot/
 │   │   ├── aveApiV2.js            # Ave.ai API V2服务
 │   │   ├── binanceMonitor.js      # 币安公告监控服务
 │   │   ├── binanceMonitorMock.js  # 币安监控模拟版本
+│   │   ├── twitterMonitorRSSHub.js # 推特监控服务（RSSHub）
 │   │   └── cache.js                # 缓存服务
 │   ├── handlers/
 │   │   └── messageHandler.js       # 消息处理器
@@ -131,6 +158,7 @@ wx_bot/
 ├── package.json                    # 项目配置
 ├── README.md                       # 说明文档
 ├── BINANCE_MONITOR.md              # 币安监控详细说明
+├── TWITTER_MONITOR_RSSHUB.md       # 推特监控详细说明（RSSHub）
 ├── QUICK_START.md                  # 快速开始指南
 └── DEPLOY_UBUNTU.md                # Ubuntu部署指南
 ```
@@ -144,12 +172,17 @@ wx_bot/
 | `AVE_AI_API_KEY` | 是 | Ave.ai API密钥 | 无 |
 | `MONITOR_ROOMS` | 否 | 监控的群名称，多个用逗号分隔 | 监控所有群 |
 | `LOG_LEVEL` | 否 | 日志级别 (error/warn/info/debug) | `info` |
-| `CACHE_ADDRESS_TIMEOUT` | 否 | 地址播报缓存时间(毫秒) | `10000` |
-| `CACHE_CONTRACT_TIMEOUT` | 否 | API数据缓存时间(毫秒) | `600000` |
+| `CACHE_ADDRESS_TIMEOUT` | 否 | 防刷屏时间(毫秒)，此时间内不重复播报 | `10000` |
+| `CACHE_CONTRACT_TIMEOUT` | 否 | API数据缓存时间(毫秒)，仅内部使用 | `600000` |
 | `MIN_QUERY_INTERVAL` | 否 | 同地址最小查询间隔(毫秒) | `0` |
 | `BINANCE_MOCK_MODE` | 否 | 币安监控是否使用模拟模式 | `false` |
 | `BINANCE_CHECK_INTERVAL` | 否 | 币安公告检查间隔(毫秒) | `5000` |
 | `BINANCE_MONITOR_ROOMS` | 否 | 币安公告监控的群名称 | 使用`MONITOR_ROOMS` |
+| `TWITTER_ENABLED` | 否 | 是否启用推特监控 | `true` |
+| `TWITTER_USERNAME` | 否 | 监控的推特用户名 | `tradfinews` |
+| `TWITTER_CHECK_INTERVAL` | 否 | 推特检查间隔(毫秒) | `60000` |
+| `TWITTER_MONITOR_ROOMS` | 否 | 推特监控的群名称 | 使用`MONITOR_ROOMS` |
+| `RSSHUB_INSTANCES` | 否 | 自定义RSSHub实例列表 | 使用默认公共实例 |
 
 ### 监控模式
 
