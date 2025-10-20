@@ -12,7 +12,7 @@ class BinanceMonitor {
     this.bot = bot; // 微信机器人实例
     this.monitorRooms = monitorRooms; // 要发送公告的群聊列表
     this.apiUrl = 'https://www.binance.com/bapi/apex/v1/public/apex/cms/article/list/query';
-    this.checkInterval = parseInt(process.env.BINANCE_CHECK_INTERVAL) || 3000; // 检查间隔（默认3秒）
+    this.checkInterval = parseInt(process.env.BINANCE_CHECK_INTERVAL) || 60000; // 检查间隔（默认60秒即1分钟）
     this.intervalId = null;
 
     // 缓存已知的文章ID，避免重复通知

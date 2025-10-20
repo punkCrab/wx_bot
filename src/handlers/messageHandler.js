@@ -50,7 +50,7 @@ class MessageHandler {
       this.logger.info(`检测到合约地址`, {
         room: roomTopic,
         count: addresses.length,
-        addresses: addresses
+        addresses: addresses.map(a => `${a.address} (${a.chain})`)
       });
 
       // 批量处理地址，但限制并发数
@@ -58,7 +58,7 @@ class MessageHandler {
       for (let i = 0; i < addresses.length; i += maxConcurrent) {
         const batch = addresses.slice(i, i + maxConcurrent);
         await Promise.all(
-          batch.map(address => this.processContractAddress(room, address))
+          batch.map(addrObj => this.processContractAddress(room, addrObj.address, addrObj.chain))
         );
       }
     } catch (error) {
@@ -73,10 +73,11 @@ class MessageHandler {
    * 处理单个合约地址
    * @param {Object} room - 群聊对象
    * @param {string} address - 合约地址
+   * @param {string} chain - 链类型
    */
-  async processContractAddress(room, address) {
+  async processContractAddress(room, address, chain = 'bsc') {
     const normalizedAddress = address.toLowerCase();
-    const cacheKey = `broadcast:${normalizedAddress}`;
+    const cacheKey = `broadcast:${chain}:${normalizedAddress}`;
 
     try {
       // 检查是否最近已播报过（防刷屏机制）
@@ -84,6 +85,7 @@ class MessageHandler {
         const ttl = this.addressCache.getTTL(cacheKey);
         this.logger.debug(`地址已在缓存中，跳过`, {
           address: address,
+          chain: chain,
           ttlRemaining: Math.floor(ttl / 1000) + '秒'
         });
         return;
@@ -97,19 +99,20 @@ class MessageHandler {
           const waitTime = this.minQueryInterval - timeSinceLastQuery;
           this.logger.debug(`地址查询过于频繁，等待`, {
             address: address,
+            chain: chain,
             waitTime: waitTime + 'ms'
           });
           await this.delay(waitTime);
         }
       }
 
-      this.logger.info(`开始查询合约信息`, { address: address });
+      this.logger.info(`开始查询${chain.toUpperCase()}合约信息`, { address: address });
 
       // 更新最后查询时间
       this.lastQueryTime.set(normalizedAddress, Date.now());
 
       // 调用 API 获取代币信息（不使用缓存，直接获取最新数据）
-      const tokenInfo = await this.tokenApiService.getTokenInfo(address);
+      const tokenInfo = await this.tokenApiService.getTokenInfo(address, chain);
 
       // 格式化信息
       const formattedMessage = this.tokenApiService.formatTokenInfo(tokenInfo, address);
@@ -120,8 +123,9 @@ class MessageHandler {
       // 记录已播报的地址（防刷屏时间内不重复）
       this.addressCache.set(cacheKey, true);
 
-      this.logger.info(`✓ 合约信息已播报`, {
+      this.logger.info(`✓ ${chain.toUpperCase()}合约信息已播报`, {
         address: address,
+        chain: chain,
         room: await room.topic()
       });
     } catch (error) {

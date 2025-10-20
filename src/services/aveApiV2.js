@@ -25,13 +25,14 @@ class AveApiV2Service {
   }
 
   /**
-   * 获取BSC代币信息
+   * 获取代币信息（支持 BSC 和 Solana）
    * @param {string} tokenAddress - 代币地址
+   * @param {string} chain - 链类型 ('bsc' 或 'solana')
    * @returns {Promise<Object>} 代币信息
    */
-  async getTokenInfo(tokenAddress) {
+  async getTokenInfo(tokenAddress, chain = 'bsc') {
     // 不使用缓存，每次都直接调用API获取最新数据
-    this.logger.debug(`获取最新代币信息（不使用缓存）: ${tokenAddress}`);
+    this.logger.debug(`获取最新${chain.toUpperCase()}代币信息（不使用缓存）: ${tokenAddress}`);
 
     // 检查速率限制
     if (!this.rateLimiter.canMakeRequest()) {
@@ -46,7 +47,7 @@ class AveApiV2Service {
     let lastError;
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       try {
-        this.logger.info(`获取代币信息 [${tokenAddress}] (尝试 ${attempt}/${this.maxRetries})`);
+        this.logger.info(`获取${chain.toUpperCase()}代币信息 [${tokenAddress}] (尝试 ${attempt}/${this.maxRetries})`);
         this.rateLimiter.recordRequest();
 
         // Ave.ai API V2: GET /v2/tokens?keyword=
@@ -58,16 +59,16 @@ class AveApiV2Service {
             'X-API-KEY': this.apiKey,  // 使用X-API-KEY头进行认证
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'User-Agent': 'BSC-Contract-Bot/1.0'
+            'User-Agent': 'Multi-Chain-Contract-Bot/1.0'
           },
           timeout: this.timeout
         });
 
         // 检查响应数据
         if (response.data && response.data.data) {
-          const tokenInfo = this.processTokenData(response.data.data);
+          const tokenInfo = this.processTokenData(response.data.data, chain);
           // 不缓存，直接返回最新数据
-          this.logger.info(`成功获取最新代币信息: ${tokenAddress}`);
+          this.logger.info(`成功获取最新${chain.toUpperCase()}代币信息: ${tokenAddress}`);
           return tokenInfo;
         } else if (response.data && response.data.error) {
           throw new Error(response.data.error.message || 'API返回错误');
@@ -102,9 +103,10 @@ class AveApiV2Service {
   /**
    * 处理API返回的数据
    * @param {Object|Array} data - API返回的数据
+   * @param {string} chain - 链类型
    * @returns {Object} 处理后的代币信息
    */
-  processTokenData(data) {
+  processTokenData(data, chain = 'bsc') {
     // 如果是数组，取第一个元素
     const tokenData = Array.isArray(data) ? data[0] : data;
 
@@ -127,7 +129,7 @@ class AveApiV2Service {
       symbol: tokenData.symbol,
       name: tokenData.token_name || appendixData.tokenName || tokenData.symbol,
       address: tokenData.token || tokenData.contract_address,
-      chain: tokenData.chain,
+      chain: tokenData.chain || chain, // 优先使用API返回的chain，否则使用传入的chain参数
       decimals: tokenData.decimal || tokenData.decimals,
 
       // 价格信息（根据实际返回结构）
@@ -210,8 +212,9 @@ class AveApiV2Service {
         txCount24h
       } = tokenData;
 
-      // 标题
-      let message = `📜📜${symbol || 'UNKNOWN'} (${chain === 'bsc' ? 'BSC' : chain?.toUpperCase() || 'BSC'}链)📜📜\n`;
+      // 标题 - 根据链类型显示不同的标识
+      const chainDisplay = this.getChainDisplay(chain);
+      let message = `📜📜${symbol || 'UNKNOWN'} (${chainDisplay})📜📜\n`;
 
       // 武力值（价格）
       if (priceUsd !== undefined && priceUsd !== null) {
@@ -262,6 +265,26 @@ class AveApiV2Service {
       this.logger.error('格式化代币信息失败:', { error: error.message });
       return '❌ 格式化代币信息时出错';
     }
+  }
+
+  /**
+   * 获取链的显示名称
+   * @param {string} chain - 链类型
+   * @returns {string} 显示名称
+   */
+  getChainDisplay(chain) {
+    const chainMap = {
+      'bsc': 'BSC链',
+      'solana': 'Solana链',
+      'sol': 'Solana链',
+      'ethereum': 'ETH链',
+      'eth': 'ETH链',
+      'polygon': 'Polygon链',
+      'arbitrum': 'Arbitrum链'
+    };
+
+    const chainLower = (chain || 'bsc').toLowerCase();
+    return chainMap[chainLower] || `${chain?.toUpperCase() || 'BSC'}链`;
   }
 
   /**

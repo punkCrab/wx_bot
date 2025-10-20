@@ -156,7 +156,21 @@ bot.on('error', (error) => {
   });
 
   // 处理wechat4u特定错误
-  if (error.message && error.message.includes('1102')) {
+  if (error.message && error.message.includes('-1 == 0')) {
+    console.error('\n🔴 微信协议错误 (-1)');
+    console.error('这是一个严重的wechat4u底层错误');
+    console.error('\n可能的原因:');
+    console.error('  1. 微信网页版协议变更或接口异常');
+    console.error('  2. 账号被微信临时限制或拉黑');
+    console.error('  3. 网络连接不稳定导致协议错误');
+    console.error('  4. wechat4u puppet版本过旧');
+    console.error('\n强烈建议的解决方案:');
+    console.error('  1. 立即停止当前会话，等待5-10分钟后重试');
+    console.error('  2. 更换更稳定的微信账号（注册时间>6个月）');
+    console.error('  3. 升级到付费puppet（如wechaty-puppet-padlocal）');
+    console.error('  4. 考虑使用其他方案（如企业微信、钉钉）');
+    console.error('\n⚠️ 注意: 免费的wechat4u puppet不稳定，生产环境不推荐使用\n');
+  } else if (error.message && error.message.includes('1102')) {
     console.error('\n❌ 微信登录错误 (1102)');
     console.error('可能的原因:');
     console.error('  1. 账号被微信限制登录网页版/第三方客户端');

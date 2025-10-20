@@ -1,14 +1,17 @@
-# 微信群BSC代币信息播报机器人
+# 微信群多链代币信息播报机器人
 
 这是一个功能强大的微信群监控机器人，提供以下核心功能：
-1. **BSC代币信息播报** - 自动检测并播报BSC合约地址的代币信息
+1. **多链代币信息播报** - 自动检测并播报 BSC 和 Solana 合约地址的代币信息
 2. **币安上币公告监控** - 实时监控币安新币上线公告并通知到微信群
 3. **推特动态监控** - 实时监控指定推特账号的最新推文并推送到微信群
 
 ## 功能特性
 
-### BSC代币信息播报
-- ✅ 自动检测群消息中的BSC合约地址（0x开头，42位十六进制）
+### 多链代币信息播报
+- ✅ 支持 **BSC** 和 **Solana** 双链
+- ✅ 自动检测群消息中的合约地址：
+  - BSC: 0x开头，42位十六进制
+  - Solana: base58编码，40-44个字符
 - ✅ 通过 ave.ai API 获取代币实时数据
 - ✅ 丰富的信息展示：
   - 武力（当前价格）
@@ -24,9 +27,9 @@
 
 ### 币安上币公告监控
 - ✅ 实时监控币安新币上线公告
-- ✅ 每3秒自动检查最新公告（可配置，优化后延迟<10秒）
+- ✅ 每1分钟自动检查最新公告（可配置，避免频繁请求被限流）
 - ✅ 检测到新币上线立即推送到微信群
-- ✅ **并行发送消息，10倍性能提升**
+- ✅ **并行发送消息，高效快速**
 - ✅ 防重复通知机制
 - ✅ 支持真实API和模拟模式
 - ✅ 可配置独立的监控群聊
@@ -82,7 +85,7 @@ MIN_QUERY_INTERVAL=0           # 无额外查询间隔限制
 
 # 币安公告监控配置
 BINANCE_MOCK_MODE=false        # 是否使用模拟模式
-BINANCE_CHECK_INTERVAL=3000    # 检查间隔（毫秒，默认3秒，优化后延迟<10秒）
+BINANCE_CHECK_INTERVAL=60000   # 检查间隔（毫秒，默认60000即1分钟）
 BINANCE_MONITOR_ROOMS=         # 独立的监控群聊
 
 # 推特监控配置（RSSHub）
@@ -161,7 +164,8 @@ wx_bot/
 ├── README.md                       # 说明文档
 ├── BINANCE_MONITOR.md              # 币安监控详细说明
 ├── BINANCE_NOTIFICATION_OPTIMIZATION.md # 币安通知延迟优化说明
-├── TWITTER_MONITOR_RSSHUB.md       # 推特监控详细说明（RSSHub）
+├── SOLANA_SUPPORT.md               # Solana 链支持说明
+├── WECHAT4U_TROUBLESHOOTING.md     # Wechat4u 错误排查指南
 ├── QUICK_START.md                  # 快速开始指南
 └── DEPLOY_UBUNTU.md                # Ubuntu部署指南
 ```
@@ -178,7 +182,7 @@ wx_bot/
 | `CACHE_ADDRESS_TIMEOUT` | 否 | 防刷屏时间(毫秒)，此时间内不重复播报 | `10000` |
 | `MIN_QUERY_INTERVAL` | 否 | 同地址最小查询间隔(毫秒) | `0` |
 | `BINANCE_MOCK_MODE` | 否 | 币安监控是否使用模拟模式 | `false` |
-| `BINANCE_CHECK_INTERVAL` | 否 | 币安公告检查间隔(毫秒) | `3000` |
+| `BINANCE_CHECK_INTERVAL` | 否 | 币安公告检查间隔(毫秒) | `60000` |
 | `BINANCE_MONITOR_ROOMS` | 否 | 币安公告监控的群名称 | 使用`MONITOR_ROOMS` |
 | `TWITTER_ENABLED` | 否 | 是否启用推特监控 | `true` |
 | `TWITTER_USERNAME` | 否 | 监控的推特用户名 | `tradfinews` |
