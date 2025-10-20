@@ -289,8 +289,11 @@ A: 是的，Ave.ai API v2 支持多链查询，包括 Solana。使用 `keyword` 
 const BSC_ADDRESS_REGEX = /\b(0x[a-fA-F0-9]{40})\b/g;
 
 // Solana 地址 (base58)
-const SOLANA_ADDRESS_REGEX = /\b([1-9A-HJ-NP-Za-km-z]{32,44})\b/g;
+// 简化版本，移除\b边界检查以提高兼容性
+const SOLANA_ADDRESS_REGEX = /[1-9A-HJ-NP-Za-km-z]{32,44}/g;
 ```
+
+**注意**: Solana 地址正则不使用 `\b` 单词边界，因为 base58 字符集在某些上下文中可能导致边界匹配失败。改用简单的字符匹配，然后通过 `isValidSolanaAddress()` 函数进行二次验证，确保准确性。
 
 ### Base58 字符集
 Solana 使用的 base58 字符集：

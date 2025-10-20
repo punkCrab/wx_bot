@@ -8,7 +8,7 @@ const BSC_ADDRESS_REGEX = /\b(0x[a-fA-F0-9]{40})\b/g;
 
 // Solana合约地址正则表达式（base58编码，32-44个字符）
 // Solana地址只包含 base58 字符集：1-9, A-Z, a-z，排除 0, O, I, l
-const SOLANA_ADDRESS_REGEX = /\b([1-9A-HJ-NP-Za-km-z]{32,44})\b/g;
+const SOLANA_ADDRESS_REGEX = /[1-9A-HJ-NP-Za-km-z]{32,44}/g;
 
 /**
  * 从文本中提取所有合约地址（BSC 和 Solana）
